@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<html>
+  <head>
+  <meta charset="utf-8">
+  <title>BioPathways</title>
+    <style>
+  #headbar {
+    background: #007099; <!--#092234;-->
+    padding: 0px;
+    margin: 0px;
+  }
+  </style>
+    <link rel="stylesheet" type="text/css" href="css/bootstrap.min.css"/>
+    <script src="js/d3.js"></script>
+    <script src="js/d3-tip.min.js"></script>	
+    <script src="js/jquery-1.12.4.js"></script>	
+    <script src="js/math.min.js"></script>	 
+	  <script src="js/combined.js"></script> 
+    <script src="js/d3sparql.js"></script>
+    <script>
+    //execute the search and show the biological pathway
+    function exec() {
+      var endpoint = d3.select("#endpoint").property("value")
+      var sparql = d3.select("#sparql1").property("value")+d3.select("#pathway_id").property("value")+d3.select("#sparql2").property("value")
+      d3sparql.query(endpoint, sparql, render)
+    }
+    //
+    function render(json) {
+      var config = {
+        "charge": d3.select("#charge").property("value"),
+        "distance": d3.select("#distance").property("value"),
+        "width": 1100,
+        "height": 550,
+        "selector": "#result"
+      }
+      d3sparql.forcegraph(json, config)
+      d3sparql.showpathwayname()
+    }
+    //use cache in case the network is not available
+    function exec_offline() {
+      d3.json("wp1011.json", render)
+    }
+    </script>
+  </head>
+  <body>
+    <div id="headbar">
+      <form  id="searchform"  style="margin-bottom:0px;">
+        BioPW
+         <input  type="hidden" id="endpoint" class="span5" value="http://sparql.wikipathways.org/" type="text">
+	       <input  type="hidden" id="charge"  value=-1000 size="10" type="text">
+	       <input  type="hidden" id="distance"  value=100 size="10" type="text">
+         <input  id="pathway_id" value="WP1037"  size="35" tabindex="1" autofocus="true" placeholder="Search..." style="margin:10px 10px 10px 10px;">
+         <button class="btn" type="button" onclick="exec()">Query</button>
+         <button class="btn" type="button" onclick="exec_offline()">Use cache</button>  
+      </form>
+    </div>
+    <div id="query" style="margin: 10px">
+      <textarea style="display:none" id="sparql1" class="span9" rows=15>
+        PREFIX wp:    <http://vocabularies.wikipathways.org/wp#>
+        PREFIX dc:    <http://purl.org/dc/elements/1.1/> 
+        PREFIX dcterms:  <http://purl.org/dc/terms/> 
+        SELECT distinct   ?lang1 ?lang2 str(?sourcename) as ?lang1lable  str(?targetname) as ?lang2lable ?lang1type ?lang2type  ?name ?description
+        WHERE {
+        ?pathway a wp:Pathway .
+        ?pathway dc:identifier <http://identifiers.org/wikipathways/</textarea>
+      <textarea style="display:none" id="sparql2" class="span9" rows=15>> .
+        ?interaction dcterms:isPartOf ?pathway . 
+        ?pathway dc:title ?name  .
+        ?interaction a wp:Interaction . 
+        ?interaction wp:source ?lang1 .
+        ?lang1 rdfs:label ?sourcename .
+        ?lang1 a ?lang1type .
+        ?interaction wp:target ?lang2 .
+        ?lang2 rdfs:label ?targetname .
+        ?lang2 a ?lang2type .
+        OPTIONAL
+        {?pathway dcterms:description ?description .}
+        FILTER(?lang1type !=wp:DataNode && ?lang2type != wp:DataNode) .
+        }
+      </textarea>
+    </div>
+    <div class="col-xs-12 col-sm-9 col-sm-push-3" id="div_main">
+		<p id="pathway_description" style="width:1100px;">
+		</p>
+		<div id="legend" style="margin-bottom:10px;">
+		</div>
+		<div id="result">
+		</div>
+	</div>
+	<div class="col-xs-12 col-sm-3 row-xs-12 col-sm-pull-9" style="position:fixed;background-color:">
+		<h1 class="break-word" id="pathway_name">
+		</h1>	
+		<div id="result1">
+		</div>
+		<ul class="list-group" id="filter_result">
+		</ul>
+	</div>
+  </body>
+</html>
